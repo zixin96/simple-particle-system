@@ -1,0 +1,86 @@
+<!DOCTYPE HTML> 
+<html lang="en"> 
+<head>
+<title>Hello Particle Zixin Zhang</title>
+<meta charset="utf-8"> 
+</head>
+	
+<script id="shader-vs" type="x-shader/x-vertex">
+	attribute vec3 aPosition;
+	attribute vec3 aNormal;
+    
+	uniform mat4 uMVMatrix;
+	uniform mat4 uPMatrix;
+	uniform mat3 uNMatrix;
+    
+	varying vec3 vNormal;
+	varying vec3 vPosition;
+  
+	void main(void) {
+    //Get vertex position in eye coords
+		vec4 vertexPositionEye4 = uMVMatrix * vec4(aPosition, 1.0);
+        
+        vPosition = vertexPositionEye4.xyz / vertexPositionEye4.w;
+        
+		vNormal = normalize(uNMatrix * aNormal);
+        
+		gl_Position = uPMatrix*uMVMatrix*vec4(aPosition, 1.0);
+	}
+</script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+	precision mediump float;
+    uniform vec3 uLightPosition;
+	uniform vec3 uAmbientLightColor;
+	uniform vec3 uDiffuseLightColor;
+	uniform vec3 uSpecularLightColor;
+	uniform vec3 uAmbientMaterialColor;
+	uniform vec3 uDiffuseMaterialColor;
+	uniform vec3 uSpecularMaterialColor;
+	uniform float uShininess;
+    
+	varying vec3 vPosition;
+	varying vec3 vNormal;
+
+
+	void main() {
+                //the vector (l)
+                vec3 vectorToLightSource = normalize(uLightPosition - vPosition);
+                //n dot l
+                float diffuseLightWeightning = max(dot(vNormal, vectorToLightSource), 0.0);
+                //the view vector (v)
+                vec3 viewVectorEye = -normalize(vPosition);
+                //the halfway vector (H)
+                vec3 halfwayVector = normalize(vectorToLightSource+viewVectorEye);
+                
+                float ndoth = max(dot(halfwayVector, viewVectorEye), 0.0);
+
+                float specularLightWeightning = pow(ndoth, uShininess);
+
+                gl_FragColor = vec4(((uAmbientLightColor*uAmbientMaterialColor)
+                                + (uDiffuseLightColor*uDiffuseMaterialColor) * diffuseLightWeightning
+                                + (uSpecularLightColor*uSpecularMaterialColor) * specularLightWeightning),1.0);
+
+	}
+</script>
+
+<script src="gl-matrix-min.js"></script> 
+<script src="webgl-utils.js"></script>
+<script src="simpleModeling.js"></script>    
+<script src="Sphere.js"></script>
+<script src="HelloParticle.js"></script> 
+<body onload="startup();">
+	<canvas id="myGLCanvas" width="800" height="800" onclick="addParticles()"></canvas><br>
+    <b>This is a simple particle system. Every time you left click the mouse, you add 3 particles</b><br>
+	<table>
+        <tr>
+            <th>Input</th>
+            <th>Function</th>
+        </tr>
+        <tr>
+            <td>r key</td>
+            <td>Reset: Clear the balls</td>
+        </tr>
+    </table>	
+</body>
+</html>
